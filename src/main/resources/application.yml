@@ -1,0 +1,36 @@
+
+server:
+  port: 8081
+local:
+  http://localhost:8080/realms/SpringBootKeycloak
+token:
+  url: ${local}/protocol/openid-connect/token
+logout:
+  url: ${local}/protocol/openid-connect/logout
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${local}
+          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
+      client:
+        provider:
+          keycloak:
+            issuer-uri: ${local}
+            user-name-attribute: preferred_username
+        registration:
+          keycloak:
+            client-id: spring-app
+            authorization-grant-type: authorization_code
+            scope: openid
+
+jwt:
+  auth:
+    converter:
+      resource-id: spring-app
+      principle-attribute: preferred_username
+
+logging:
+  level:
+    org.springframework.security: debug
