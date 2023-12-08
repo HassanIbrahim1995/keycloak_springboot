@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 public class LoginController {
 
-    LoginService loginservice;
+   private final LoginService loginservice;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginrequest) {
@@ -26,8 +26,4 @@ public class LoginController {
         return loginservice.logout(token);
     }
 
-    @PostMapping("/introspect")
-    public ResponseEntity<IntrospectResponse> introspect(@RequestBody TokenRequest token) {
-        return loginservice.introspect(token);
-    }
 }

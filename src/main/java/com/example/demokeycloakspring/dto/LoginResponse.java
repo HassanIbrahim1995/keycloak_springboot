@@ -14,6 +14,8 @@ public class LoginResponse {
     @JsonIgnore
     private String refresh_token;
     private String expires_in;
+    @JsonIgnore
     private String refresh_expires_in;
+    @JsonIgnore
     private String token_type;
 }

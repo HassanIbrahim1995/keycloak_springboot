@@ -1,58 +1,72 @@
 package com.example.demokeycloakspring.service;
 
 import com.example.demokeycloakspring.dto.*;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
+/**
+ * Service class for handling login and logout functionalities with Keycloak.
+ */
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class LoginService {
 
-    RestTemplate restTemplate;
-    KeycloakProperties keycloakProperties;
+    private static final String CLIENT_ID = "client_id";
+    private static final String TOKEN = "token";
+    private static final String GRANT_TYPE = "grant_type";
+    private static final String GRANT_TYPE_PASSWORD = "password";
 
-    public ResponseEntity<LoginResponse> login(LoginRequest loginrequest) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+    private final WebClient webClient;
+
+    private final KeycloakProperties keycloakProperties;
+
+    /**
+     * Logs in a user using the provided login request details.
+     *
+     * @param loginRequest the login request containing username and password
+     * @return ResponseEntity with LoginResponse and HTTP status code
+     */
+    public ResponseEntity<LoginResponse> login(LoginRequest loginRequest) {
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        map.add("client_id", keycloakProperties.clientId());
-        map.add("grant_type", "password");
-        map.add("username", loginrequest.getUsername());
-        map.add("password", loginrequest.getPassword());
-        HttpEntity<MultiValueMap<String, String>> httpEntity = new HttpEntity<>(map, headers);
-        ResponseEntity<LoginResponse> response = restTemplate.postForEntity(keycloakProperties.tokeUrl(), httpEntity, LoginResponse.class);
-        return new ResponseEntity<>(response.getBody(), HttpStatus.OK);
+        map.add(CLIENT_ID, keycloakProperties.getClientId());
+        map.add(GRANT_TYPE, GRANT_TYPE_PASSWORD);
+        map.add("username", loginRequest.getUsername());
+        map.add("password", loginRequest.getPassword());
+
+        return webClient.post()
+                .uri(keycloakProperties.getTokenUrl())
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .bodyValue(map)
+                .retrieve()
+                .toEntity(LoginResponse.class)
+                .block();
     }
 
+    /**
+     * Logs out a user using the provided token request.
+     *
+     * @param request the token request containing the refresh token
+     * @return ResponseEntity with Response message and HTTP status code
+     */
     public ResponseEntity<Response> logout(TokenRequest request) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        map.add("client_id", keycloakProperties.clientId());
+        map.add(CLIENT_ID, keycloakProperties.getClientId());
         map.add("refresh_token", request.getToken());
-        HttpEntity<MultiValueMap<String, String>> httpEntity = new HttpEntity<>(map, headers);
-        ResponseEntity<Response> response = restTemplate.postForEntity("http://localhost:8180/auth/realms/auth-realm/protocol/openid-connect/logout", httpEntity, Response.class);
-        Response res = new Response();
+        ResponseEntity<Response> response = webClient.post()
+                .uri(keycloakProperties.getLogoutUrl())
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .bodyValue(map)
+                .retrieve()
+                .toEntity(Response.class)
+                .block();
+
         if (response.getStatusCode().is2xxSuccessful()) {
-            res.setMessage("Logged out successfully");
+            return ResponseEntity.ok(new Response("Logged out successfully"));
         }
-        return new ResponseEntity<>(res, HttpStatus.OK);
+        return ResponseEntity.status(response.getStatusCode()).body(null);
     }
-
-    public ResponseEntity<IntrospectResponse> introspect(TokenRequest request) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        map.add("client_id", keycloakProperties.clientId());
-        map.add("token", request.getToken());
-        HttpEntity<MultiValueMap<String, String>> httpEntity = new HttpEntity<>(map, headers);
-        ResponseEntity<IntrospectResponse> response = restTemplate.postForEntity("http://localhost:8180/auth/realms/auth-realm/protocol/openid-connect/token/introspect", httpEntity, IntrospectResponse.class);
-        return new ResponseEntity<>(response.getBody(), HttpStatus.OK);
-    }
-
-
 }

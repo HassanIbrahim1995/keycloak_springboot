@@ -1,35 +1,37 @@
-
 server:
   port: 8081
-local:
-  http://localhost:8080/realms/SpringBootKeycloak
-token:
-  url: ${local}/protocol/openid-connect/token
-logout:
-  url: ${local}/protocol/openid-connect/logout
+
+keycloak:
+  realm-url: http://localhost:8080/realms/SpringBootKeycloak
+  client-id: spring-app
+  user-name-attribute: preferred_username
+  authorization-grant-type: authorization_code
+  token-url: ${keycloak.realm-url}/protocol/openid-connect/token
+  logout-url: ${keycloak.realm-url}/protocol/openid-connect/logout
+
 spring:
   security:
     oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${local}
-          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
       client:
         provider:
           keycloak:
-            issuer-uri: ${local}
-            user-name-attribute: preferred_username
+            issuer-uri: ${keycloak.realm-url}
+            user-name-attribute: ${keycloak.user-name-attribute}
         registration:
           keycloak:
-            client-id: spring-app
-            authorization-grant-type: authorization_code
+            client-id: ${keycloak.client-id}
+            authorization-grant-type: ${keycloak.authorization-grant-type}
             scope: openid
+      resourceserver:
+        jwt:
+          issuer-uri: ${keycloak.realm-url}
+          jwk-set-uri: ${keycloak.realm-url}/protocol/openid-connect/certs
 
 jwt:
   auth:
     converter:
-      resource-id: spring-app
-      principle-attribute: preferred_username
+      resource-id: ${keycloak.client-id}
+      principle-attribute: ${keycloak.user-name-attribute}
 
 logging:
   level:

@@ -1,13 +1,18 @@
 package com.example.demokeycloakspring.dto;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 
-@Component
-public record KeycloakProperties(
-        @Value("${spring.security.oauth2.client.provider.keycloak.issuer-uri}") String issuerUrl,
-        @Value("${spring.security.oauth2.client.registration.keycloak.client-id}") String clientId,
-        @Value("${spring.security.oauth2.client.registration.keycloak.authorization-grant-type}") String grantType,
-        @Value("${token.url}") String tokeUrl
-) {
+@Configuration
+@ConfigurationProperties(prefix = "keycloak")
+@Getter
+@Setter
+public class KeycloakProperties {
+    private String issuerUrl;
+    private String clientId;
+    private String grantType;
+    private String tokenUrl;
+    private String logoutUrl;
 }
